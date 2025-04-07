@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <img src="myphoto.png" alt="Description of image" width="300">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find the Place</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            font-size: 40px;
+            font-weight: bold;
+        }
+        h2 {
+            font-size: 20px;
+        }
+        .menu, .game-screen, .final-screen {
+            display: none;
+        }
+        .visible {
+            display: block;
+        }
+        button {
+            font-size: 24px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: black;
+            color: white;
+        }
+        .game-screen img {
+            width: 400px;
+            height: auto;
+            border-radius: 10px;
+        }
+        .feedback {
+            margin-top: 20px;
+        }
+        .feedback div {
+            font-size: 32px;
+            font-weight: bold;
+            padding: 10px 30px;
+            border-radius: 40px;
+            display: inline-block;
+            color: white;
+        }
+        .correct-msg {
+            background-color: #00c853;
+        }
+        .wrong-msg {
+            background-color: #7b0000;
+        }
+        .feedback button {
+            font-size: 18px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Menu -->
+    <div id="menu" class="menu visible">
+        <h1>FIND THE PLACE</h1>
+        <h2>GUESS THE PHILIPPINE PLACES</h2>
+        <button onclick="startGame()">START GAME</button>
+        <button>ABOUT THE GAME</button>
+        <button>CREATORS</button>
+        <p>The Picture does not belong to me and I do not claim any ownership of it.</p>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game" class="game-screen">
+        <h1>FIND THE PLACE</h1>
+        <h2>GUESS THE PHILIPPINE PLACES</h2>
+        <button id="timer">10:00</button>
+        <br>
+        <img id="gameImage" src="" alt="Game Image">
+        <br>
+        <h3 id="hint">Hint:</h3>
+        <input type="text" id="answerInput" placeholder="Answer">
+        <button onclick="checkAnswer()">Submit</button>
+
+        <!-- Feedback Messages -->
+        <div id="correctFeedback" class="feedback" style="display: none;">
+            <div class="correct-msg">Answer is Correct</div><br>
+            <button onclick="nextQuestion()" style="background-color: #00c853;">Proceed to Next Level</button>
+        </div>
+
+        <div id="wrongFeedback" class="feedback" style="display: none;">
+            <div class="wrong-msg">Answer is Wrong</div><br>
+            <button onclick="retryQuestion()" style="background-color: #00c853;">Try Again</button>
+        </div>
+
+        <p>The Picture does not belong to me and I do not claim any ownership of it.</p>
+    </div>
+
+    <!-- Final Screen -->
+    <div id="final" class="final-screen">
+        <h1>CONGRATULATIONS!</h1>
+        <h2>YOU HAVE PASSED ALL THE LEVELS</h2>
+        <button onclick="returnToMainMenu()">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        let timeRemaining;
+        let timerInterval;
+        let currentQuestion = 0;
+
+        let questions = [
+            // Easy
+            { image: "easy1.jpg", hint: "Hint: Pearl of the Orient", answer: "Manila", level: "easy" },
+            { image: "easy2.jpg", hint: "Hint: Chocolate Hills", answer: "Bohol", level: "easy" },
+            { image: "easy3.jpg", hint: "Hint: Surfing Capital", answer: "Siargao", level: "easy" },
+            { image: "easy4.jpg", hint: "Hint: Mayon Volcano", answer: "Albay", level: "easy" },
+            { image: "easy5.jpg", hint: "Hint: Heart of the Philipines", answer: "Marinduque", level: "easy" },
+
+            // Medium
+            { image: "medium1.jpg", hint: "Hint: Home of the Hero", answer: "Calamba", level: "medium" },
+            { image: "medium2.jpg", hint: "Hint: City of Smiles", answer: "Bacolod", level: "medium" },
+            { image: "medium3.jpg", hint: "Hint: Queen City of the South", answer: "Cebu", level: "medium" },
+            { image: "medium4.jpg", hint: "Hint: Kadayawan Festival", answer: "Davao", level: "medium" },
+            { image: "medium5.jpg", hint: "Hint: Hundred Islands", answer: "Pangasinan", level: "medium" },
+
+            // Hard
+            { image: "hard1.jpg", hint: "Hint: Summer Capital", answer: "Baguio", level: "hard" },
+            { image: "hard2.jpg", hint: "Hint: Northernmost Province", answer: "Batanes", level: "hard" },
+            { image: "hard3.jpg", hint: "Hint: Banaue Rice Terraces", answer: "Ifugao", level: "hard" },
+            { image: "hard4.jpg", hint: "Hint: Mount Apo", answer: "Davao del Sur", level: "hard" },
+            { image: "hard5.jpg", hint: "Hint: White Island", answer: "Camiguin", level: "hard" },
+
+            // Bonus
+            { image: "bonus1.jpg", hint: "Hint: Historic City of Vigan", answer: "Ilocos Sur", level: "medium" },
+            { image: "bonus2.jpg", hint: "Hint: Pink Sand Beach", answer: "Zamboanga", level: "medium" },
+            { image: "bonus3.jpg", hint: "Hint: Whale Sharks", answer: "Donsol", level: "medium" },
+            { image: "bonus4.jpg", hint: "Hint: Lakawon Island", answer: "Negros Occidental", level: "hard" },
+            { image: "bonus5.jpg", hint: "Hint: Mt. Pulag", answer: "Benguet", level: "hard" }
+        ];
+
+        function shuffleQuestions() {
+            questions = questions.sort(() => Math.random() - 0.5).slice(0, 20);
+        }
+
+        function startGame() {
+            document.getElementById('menu').classList.remove('visible');
+            document.getElementById('game').classList.add('visible');
+            shuffleQuestions();
+            currentQuestion = 0;
+            timeRemaining = 600;
+            updateTimer();
+            timerInterval = setInterval(countdown, 1000);
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            hideFeedback();
+            if (currentQuestion >= questions.length) {
+                clearInterval(timerInterval);
+                document.getElementById('game').classList.remove('visible');
+                document.getElementById('final').classList.add('visible');
+                return;
+            }
+            let q = questions[currentQuestion];
+            document.getElementById('gameImage').src = q.image;
+            document.getElementById('hint').innerText = q.hint;
+            document.getElementById('answerInput').value = "";
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById('answerInput').value.trim();
+            let currentQ = questions[currentQuestion];
+            if (userAnswer.toLowerCase() === currentQ.answer.toLowerCase()) {
+                showFeedback("correct");
+            } else {
+                if (currentQ.level === "easy") {
+                    timeRemaining -= 5;
+                } else if (currentQ.level === "medium") {
+                    timeRemaining -= 10;
+                } else if (currentQ.level === "hard") {
+                    timeRemaining -= 60;
+                }
+                if (timeRemaining <= 0) {
+                    timeRemaining = 0;
+                    clearInterval(timerInterval);
+                    alert("Time's up! You lost.");
+                    returnToMainMenu();
+                } else {
+                    updateTimer();
+                    showFeedback("wrong");
+                }
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            loadQuestion();
+        }
+
+        function retryQuestion() {
+            hideFeedback();
+        }
+
+        function showFeedback(type) {
+            hideFeedback();
+            if (type === "correct") {
+                document.getElementById("correctFeedback").style.display = "block";
+            } else {
+                document.getElementById("wrongFeedback").style.display = "block";
+            }
+        }
+
+        function hideFeedback() {
+            document.getElementById("correctFeedback").style.display = "none";
+            document.getElementById("wrongFeedback").style.display = "none";
+        }
+
+        function countdown() {
+            if (timeRemaining > 0) {
+                timeRemaining--;
+                updateTimer();
+            } else {
+                clearInterval(timerInterval);
+                alert("Time's up! You lost.");
+                returnToMainMenu();
+            }
+        }
+
+        function updateTimer() {
+            let minutes = Math.floor(timeRemaining / 60);
+            let seconds = timeRemaining % 60;
+            document.getElementById('timer').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function returnToMainMenu() {
+            clearInterval(timerInterval);
+            hideFeedback();
+            document.getElementById('game').classList.remove('visible');
+            document.getElementById('final').classList.remove('visible');
+            document.getElementById('menu').classList.add('visible');
+        }
+    </script>
+</body>
+</html>
